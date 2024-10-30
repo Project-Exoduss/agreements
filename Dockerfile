@@ -18,7 +18,8 @@ RUN apk add --no-cache nodejs yarn git build-base python3 && \
 
 COPY package.json ./
 
-RUN yarn install --network-timeout 600000 --non-interactive --frozen-lockfile=false
+RUN yarn set version 1.22.19 && \
+    yarn install --network-timeout 600000 --non-interactive
 
 COPY . .
 
