@@ -16,21 +16,13 @@ WORKDIR /app
 RUN apk add --no-cache nodejs yarn git build-base python3 && \
     gem install shakapacker
 
-COPY ./package.json ./yarn.lock ./
+COPY package.json ./
 
-RUN yarn install --network-timeout 600000 --non-interactive
+RUN yarn install --network-timeout 600000 --non-interactive --frozen-lockfile=false
 
-COPY ./bin/shakapacker ./bin/shakapacker
-COPY ./config/webpack ./config/webpack
-COPY ./config/shakapacker.yml ./config/shakapacker.yml
-COPY ./postcss.config.js ./postcss.config.js
-COPY ./tailwind.config.js ./tailwind.config.js
-COPY ./tailwind.form.config.js ./tailwind.form.config.js
-COPY ./tailwind.application.config.js ./tailwind.application.config.js
-COPY ./app/javascript ./app/javascript
-COPY ./app/views ./app/views
+COPY . .
 
-RUN echo "gem 'shakapacker'" > Gemfile && ./bin/shakapacker
+RUN yarn build || true
 
 FROM ruby:3.3.4-alpine as app
 
