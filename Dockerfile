@@ -13,17 +13,22 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
+# Install necessary dependencies
 RUN apk add --no-cache nodejs yarn git build-base python3 && \
     gem install shakapacker
 
-COPY package.json ./
+# First, copy the entire application
+COPY . .
 
+# Set yarn version and install dependencies
 RUN yarn set version 1.22.19 && \
     yarn install --network-timeout 600000 --non-interactive
 
-COPY . .
+# Build assets with more verbose output
+RUN yarn build --verbose || (echo "Asset compilation failed" && exit 1)
 
-RUN yarn build || true
+# List contents of public/packs to verify files were generated
+RUN ls -la public/packs
 
 FROM ruby:3.3.4-alpine as app
 
@@ -62,9 +67,12 @@ COPY ./public ./public
 COPY ./tmp ./tmp
 COPY LICENSE README.md Rakefile config.ru .version ./
 
+RUN mkdir -p public/packs
+
+COPY --from=webpack /app/public/packs ./public/packs
+
 COPY --from=fonts /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts
 COPY --from=fonts /fonts/FreeSans.ttf /usr/share/fonts/freefont
-COPY --from=webpack /app/public/packs ./public/packs
 
 RUN ln -s /fonts /app/public/fonts
 RUN bundle exec bootsnap precompile --gemfile app/ lib/
