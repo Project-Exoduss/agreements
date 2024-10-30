@@ -13,12 +13,12 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-RUN apk add --no-cache nodejs yarn git build-base && \
+RUN apk add --no-cache nodejs yarn git build-base python3 && \
     gem install shakapacker
 
 COPY ./package.json ./yarn.lock ./
 
-RUN yarn install --network-timeout 1000000
+RUN yarn install --network-timeout 600000 --non-interactive
 
 COPY ./bin/shakapacker ./bin/shakapacker
 COPY ./config/webpack ./config/webpack
