@@ -19,9 +19,14 @@ services:
       - key: RAILS_SERVE_STATIC_FILES
         value: true
     buildCommand: |
-      # Clean install of dependencies
+      # Clean and verify dependencies
       rm -rf node_modules yarn.lock
+      # Install specific version of shakapacker
+      yarn add shakapacker@8.0.2 --exact
+      # Install other dependencies
       yarn install --frozen-lockfile --network-timeout 600000
+      # Verify shakapacker version
+      yarn list shakapacker
       # Build webpack assets
       yarn run webpack --config config/webpack/webpack.config.js --mode=production
       # Precompile assets (after webpack build)

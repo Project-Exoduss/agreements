@@ -37,7 +37,7 @@ gem 'rotp'
 gem 'rqrcode'
 gem 'ruby-vips'
 gem 'rubyXL'
-gem 'shakapacker'
+gem 'shakapacker', '8.0.2'
 gem 'sidekiq'
 gem 'sqlite3', require: false
 gem 'strip_attributes'
