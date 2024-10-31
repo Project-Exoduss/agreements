@@ -1,5 +1,5 @@
 {
-  "name": "docuseal",
+  "name": "pex-agreements",
   "private": true,
   "dependencies": {
     "@babel/core": "7.21.8",
@@ -47,7 +47,9 @@
   "packageManager": "yarn@1.22.19",
   "version": "0.1.0",
   "scripts": {
-    "eslint": "./node_modules/eslint/bin/eslint.js \"app/javascript/**/*.{js,vue}\" --fix"
+    "eslint": "./node_modules/eslint/bin/eslint.js \"app/javascript/**/*.{js,vue}\" --fix",
+    "webpack": "webpack --config config/webpack/webpack.config.js",
+    "build": "webpack --config config/webpack/webpack.config.js --mode=production"
   },
   "babel": {
     "presets": [

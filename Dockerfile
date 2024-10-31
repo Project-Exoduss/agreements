@@ -14,18 +14,31 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 # Install necessary dependencies
-RUN apk add --no-cache nodejs yarn git build-base python3 && \
-    gem install shakapacker
+RUN apk add --no-cache \
+    nodejs \
+    yarn \
+    git \
+    build-base \
+    python3 \
+    && gem install bundler shakapacker
 
-# First, copy the entire application
+# Copy Gemfile and install Ruby dependencies first
+COPY Gemfile Gemfile.lock ./
+RUN bundle config set --local deployment 'true' && \
+    bundle config set --local without 'development:test' && \
+    bundle install --jobs 4 --retry 3
+
+# Copy package.json and install Node dependencies
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --network-timeout 600000
+
+# Copy the rest of the application
 COPY . .
 
-# Set yarn version and install dependencies
-RUN yarn set version 1.22.19 && \
-    yarn install --network-timeout 600000 --non-interactive
-
-# Build assets with more verbose output
-RUN yarn build --verbose || (echo "Asset compilation failed" && exit 1)
+# Compile assets
+RUN SECRET_KEY_BASE=dummy \
+    DATABASE_URL=postgres://dummy \
+    bundle exec rake assets:precompile
 
 # List contents of public/packs to verify files were generated
 RUN ls -la public/packs
@@ -49,7 +62,6 @@ legacy = legacy_sect\n\
 \n\
 [default_sect]\n\
 activate = 1\n\
-\n\
 [legacy_sect]\n\
 activate = 1' >> /app/openssl_legacy.cnf
 
