@@ -10,8 +10,8 @@ default: &default
   additional_paths: []
   webpack_loader: 'babel'
   compiler_strategy: digest
-  cache_manifest: false
-  ensure_consistent_versioning: false
+  cache_manifest: true
+  ensure_consistent_versioning: true
 
 development:
   <<: *default
@@ -43,5 +43,5 @@ test:
 
 production:
   <<: *default
-  compile: false
+  compile: true
   cache_manifest: true

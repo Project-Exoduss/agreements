@@ -21,7 +21,9 @@ services:
     buildCommand: |
       # Install yarn dependencies
       yarn install --frozen-lockfile --network-timeout 600000
-      # Precompile assets
+      # Build webpack assets
+      yarn run webpack --config config/webpack/webpack.config.js --mode=production
+      # Precompile assets (after webpack build)
       bundle exec rake assets:precompile RAILS_ENV=production NODE_ENV=production
       # Run migrations
       bundle exec rake db:migrate

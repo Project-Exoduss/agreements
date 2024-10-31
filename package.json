@@ -49,7 +49,8 @@
   "scripts": {
     "eslint": "./node_modules/eslint/bin/eslint.js \"app/javascript/**/*.{js,vue}\" --fix",
     "webpack": "webpack --config config/webpack/webpack.config.js",
-    "build": "webpack --config config/webpack/webpack.config.js --mode=production"
+    "build": "webpack --config config/webpack/webpack.config.js --mode=production",
+    "build:production": "RAILS_ENV=production NODE_ENV=production webpack --config config/webpack/webpack.config.js --mode=production"
   },
   "babel": {
     "presets": [
