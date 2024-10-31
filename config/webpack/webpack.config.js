@@ -4,7 +4,11 @@ const { VueLoaderPlugin } = require('vue-loader')
 
 const configs = generateWebpackConfig({
   resolve: {
-    extensions: ['.css', '.scss', '.vue']
+    extensions: ['.css', '.scss', '.vue', '.js', '.jsx', '.png', '.jpg', '.jpeg', '.gif', '.svg'],
+    alias: {
+      '@': path.resolve(__dirname, '../../app/javascript'),
+      images: path.resolve(__dirname, '../../app/javascript/images')
+    }
   },
   performance: {
     maxEntrypointSize: 0
@@ -13,7 +17,7 @@ const configs = generateWebpackConfig({
     runtimeChunk: false,
     concatenateModules: !process.env.BUNDLE_ANALYZE,
     splitChunks: {
-      chunks (chunk) {
+      chunks(chunk) {
         return chunk.name !== 'rollbar'
       },
       cacheGroups: {
@@ -39,6 +43,7 @@ const configs = generateWebpackConfig({
   ].filter(Boolean)
 })
 
+// Add module rules
 configs.module = merge({
   rules: [
     {
@@ -51,6 +56,13 @@ configs.module = merge({
           }
         }
       }]
+    },
+    {
+      test: /\.(png|jpg|jpeg|gif|svg|ico)$/i,
+      type: 'asset/resource',
+      generator: {
+        filename: 'images/[name][ext]'
+      }
     }
   ]
 }, configs.module)

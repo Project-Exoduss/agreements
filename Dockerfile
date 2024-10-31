@@ -59,24 +59,24 @@ activate = 1\n\
 [legacy_sect]\n\
 activate = 1' >> /app/openssl_legacy.cnf
 
-# Create necessary directories with correct permissions
-RUN mkdir -p /app/public/packs && \
-    chmod -R 777 /app/public/packs
+# Ensure public/packs directory exists
+RUN mkdir -p /app/public/packs && chmod -R 777 /app/public/packs
 
 # Copy application code
 COPY . .
 
-# Remove any existing yarn.lock to ensure clean install
-RUN rm -f yarn.lock
+# Clean and verify yarn setup
+RUN rm -rf node_modules yarn.lock && \
+    echo "=== Node version ===" && \
+    node -v && \
+    echo "=== Yarn version ===" && \
+    yarn -v
 
 # Install specific version of shakapacker and other dependencies
 RUN yarn add shakapacker@8.0.2 --exact && \
-    yarn install --frozen-lockfile --network-timeout 600000
-
-# Verify shakapacker version and debug information
-RUN yarn list shakapacker && \
-    echo "=== Checking yarn installation ===" && \
-    yarn list
+    yarn install --frozen-lockfile --network-timeout 600000 && \
+    echo "=== Verifying shakapacker installation ===" && \
+    yarn list shakapacker
 
 # Configure bundler and install gems
 RUN bundle config build.pg --with-pg-config=/usr/bin/pg_config && \
@@ -84,9 +84,15 @@ RUN bundle config build.pg --with-pg-config=/usr/bin/pg_config && \
     rm -rf ~/.bundle /usr/local/bundle/cache && \
     ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales}']" | xargs rm -rf
 
-# Compile assets
-RUN RAILS_ENV=production NODE_ENV=production \
-    bundle exec rake assets:precompile && \
+# First compile webpack assets
+RUN echo "=== Compiling webpack assets ===" && \
+    NODE_ENV=production RAILS_ENV=production yarn run webpack --config config/webpack/webpack.config.js --mode=production && \
+    echo "=== Webpack compilation complete ==="
+
+# Then run asset precompilation
+RUN echo "=== Starting asset precompilation ===" && \
+    RAILS_ENV=production NODE_ENV=production bundle exec rake assets:precompile --trace && \
+    echo "=== Asset precompilation complete ===" && \
     echo "=== Checking compiled assets ===" && \
     ls -la public/packs/ && \
     echo "=== Manifest content ===" && \
@@ -102,28 +108,12 @@ RUN ln -s /fonts /app/public/fonts
 # Precompile bootsnap
 RUN bundle exec bootsnap precompile --gemfile app/ lib/
 
-# Debug: List contents of key directories
-RUN echo "=== Final contents of /app/public/packs ===" && \
-    ls -la /app/public/packs && \
-    echo "=== Final contents of /app/public ===" && \
-    ls -la /app/public
-
 # Set up workdir for application
 WORKDIR /data/docuseal
 ENV WORKDIR=/data/docuseal
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD ls /app/public/packs/manifest.json || exit 1
-
 # Expose port
 EXPOSE 3000
 
-# Set up startup script
-CMD echo "=== Runtime Environment ===" && \
-    env | grep RAILS && \
-    echo "=== Checking public/packs at runtime ===" && \
-    ls -la /app/public/packs/ && \
-    echo "=== Checking manifest at runtime ===" && \
-    cat /app/public/packs/manifest.json && \
-    /app/bin/bundle exec puma -C /app/config/puma.rb --dir /app
+# Start command
+CMD /app/bin/bundle exec puma -C /app/config/puma.rb --dir /app
