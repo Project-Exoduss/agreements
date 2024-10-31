@@ -18,21 +18,47 @@ services:
         value: production
       - key: RAILS_SERVE_STATIC_FILES
         value: true
+      - key: RAILS_LOG_TO_STDOUT
+        value: true
+      - key: RAILS_SERVE_STATIC_FILES
+        value: true
+      - key: DEBUG
+        value: true
     buildCommand: |
-      # Clean and verify dependencies
-      rm -rf node_modules yarn.lock
-      # Install specific version of shakapacker
+      # Previous build steps...
+      rm -rf node_modules yarn.lock public/packs
       yarn add shakapacker@8.0.2 --exact
-      # Install other dependencies
       yarn install --frozen-lockfile --network-timeout 600000
-      # Verify shakapacker version
       yarn list shakapacker
-      # Build webpack assets
-      yarn run webpack --config config/webpack/webpack.config.js --mode=production
-      # Precompile assets (after webpack build)
+      rm -rf public/packs
+      RAILS_ENV=production NODE_ENV=production yarn run build:production
+      
+      # Debug information
+      echo "=== Checking build artifacts ==="
+      ls -la public/packs/
+      echo "=== Manifest content ==="
+      cat public/packs/manifest.json
+      
       bundle exec rake assets:precompile RAILS_ENV=production NODE_ENV=production
-      # Run migrations
       bundle exec rake db:migrate
+      
+      # More debug information
+      echo "=== Final packs directory structure ==="
+      find public/packs/ -type f
+      echo "=== Checking image files ==="
+      find app/javascript/images/ -type f
+      
+    startCommand: |
+      # Add runtime checks before starting the server
+      echo "=== Runtime Environment ==="
+      env | grep RAILS
+      echo "=== Checking public/packs at runtime ==="
+      ls -la public/packs/
+      echo "=== Checking manifest at runtime ==="
+      cat public/packs/manifest.json
+      
+      # Start the server
+      /app/bin/bundle exec puma -C /app/config/puma.rb --dir /app
 databases:
   - name: pex-agreements-db
     plan: free

@@ -12,12 +12,13 @@ default: &default
   compiler_strategy: digest
   cache_manifest: true
   ensure_consistent_versioning: true
+  manifest: true
+  extract_css: true
 
 development:
   <<: *default
   compile: true
   compiler_strategy: mtime
-
   dev_server:
     server: 'http'
     host: localhost
@@ -43,5 +44,14 @@ test:
 
 production:
   <<: *default
-  compile: true
+  compile: false
+  cache_manifest: true
+  ensure_consistent_versioning: true
+  manifest: true
+  extract_css: true
+  # Explicitly set the public path for production
+  public_path: /packs/
+  # Enable source maps in production for debugging
+  source_maps: true
+  # Set cache_manifest to true to ensure manifest.json is generated
   cache_manifest: true
