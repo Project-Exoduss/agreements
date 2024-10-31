@@ -19,7 +19,8 @@ services:
       - key: RAILS_SERVE_STATIC_FILES
         value: true
     buildCommand: |
-      # Install yarn dependencies
+      # Clean install of dependencies
+      rm -rf node_modules yarn.lock
       yarn install --frozen-lockfile --network-timeout 600000
       # Build webpack assets
       yarn run webpack --config config/webpack/webpack.config.js --mode=production
