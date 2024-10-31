@@ -53,5 +53,3 @@ production:
   public_path: /packs/
   # Enable source maps in production for debugging
   source_maps: true
-  # Set cache_manifest to true to ensure manifest.json is generated
-  cache_manifest: true
