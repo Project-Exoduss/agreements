@@ -19,8 +19,11 @@ services:
       - key: RAILS_SERVE_STATIC_FILES
         value: true
     buildCommand: |
-      yarn install
-      bundle exec rake assets:precompile
+      # Install yarn dependencies
+      yarn install --frozen-lockfile --network-timeout 600000
+      # Precompile assets
+      bundle exec rake assets:precompile RAILS_ENV=production NODE_ENV=production
+      # Run migrations
       bundle exec rake db:migrate
 databases:
   - name: pex-agreements-db

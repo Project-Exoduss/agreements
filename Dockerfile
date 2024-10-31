@@ -6,43 +6,6 @@ RUN apk --no-cache add fontforge wget && wget https://github.com/satbyy/go-noto-
 
 RUN fontforge -lang=py -c 'font1 = fontforge.open("FreeSans.ttf"); font2 = fontforge.open("NotoSansSymbols2-Regular.ttf"); font1.mergeFonts(font2); font1.generate("FreeSans.ttf")'
 
-FROM ruby:3.3.4-alpine as webpack
-
-ENV RAILS_ENV=production
-ENV NODE_ENV=production
-
-WORKDIR /app
-
-# Install necessary dependencies
-RUN apk add --no-cache \
-    nodejs \
-    yarn \
-    git \
-    build-base \
-    python3 \
-    && gem install bundler shakapacker
-
-# Copy Gemfile and install Ruby dependencies first
-COPY Gemfile Gemfile.lock ./
-RUN bundle config set --local deployment 'true' && \
-    bundle config set --local without 'development:test' && \
-    bundle install --jobs 4 --retry 3
-
-# Copy package.json and install Node dependencies
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --network-timeout 600000
-
-# Copy the rest of the application
-COPY . .
-
-# Compile assets
-RUN SECRET_KEY_BASE=dummy \
-    DATABASE_URL=postgres://dummy \
-    bundle exec rake assets:precompile
-
-# List contents of public/packs to verify files were generated
-RUN ls -la public/packs
-
 FROM ruby:3.3.4-alpine as app
 
 ENV RAILS_ENV=production
@@ -52,7 +15,30 @@ ENV OPENSSL_CONF=/app/openssl_legacy.cnf
 
 WORKDIR /app
 
-RUN echo '@edge https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && apk add --no-cache sqlite-dev libpq-dev mariadb-dev vips-dev vips-poppler poppler-utils redis libheif@edge vips-heif gcompat ttf-freefont && mkdir /fonts && rm /usr/share/fonts/freefont/FreeSans.otf
+# Install system dependencies
+RUN echo '@edge https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
+    apk add --no-cache \
+    nodejs \
+    yarn \
+    git \
+    build-base \
+    python3 \
+    postgresql-dev \
+    postgresql-client \
+    sqlite-dev \
+    mariadb-dev \
+    vips-dev \
+    vips-poppler \
+    poppler-utils \
+    redis \
+    libheif@edge \
+    vips-heif \
+    gcompat \
+    ttf-freefont \
+    libpq-dev \
+    tzdata \
+    && mkdir /fonts \
+    && rm -f /usr/share/fonts/freefont/FreeSans.otf
 
 RUN echo $'.include = /etc/ssl/openssl.cnf\n\
 \n\
@@ -65,24 +51,16 @@ activate = 1\n\
 [legacy_sect]\n\
 activate = 1' >> /app/openssl_legacy.cnf
 
-COPY ./Gemfile ./Gemfile.lock ./
+# Copy application code
+COPY . .
 
-RUN apk add --no-cache build-base && bundle install && apk del --no-cache build-base && rm -rf ~/.bundle /usr/local/bundle/cache && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales}']" | xargs rm -rf
+# Configure bundler and install gems
+RUN bundle config build.pg --with-pg-config=/usr/bin/pg_config \
+    && bundle install \
+    && rm -rf ~/.bundle /usr/local/bundle/cache \
+    && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales}']" | xargs rm -rf
 
-COPY ./bin ./bin
-COPY ./app ./app
-COPY ./config ./config
-COPY ./db ./db
-COPY ./log ./log
-COPY ./lib ./lib
-COPY ./public ./public
-COPY ./tmp ./tmp
-COPY LICENSE README.md Rakefile config.ru .version ./
-
-RUN mkdir -p public/packs
-
-COPY --from=webpack /app/public/packs ./public/packs
-
+# Copy fonts
 COPY --from=fonts /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts
 COPY --from=fonts /fonts/FreeSans.ttf /usr/share/fonts/freefont
 
