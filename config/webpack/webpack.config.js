@@ -1,3 +1,4 @@
+const path = require('path')
 const { generateWebpackConfig, merge } = require('shakapacker')
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 const { VueLoaderPlugin } = require('vue-loader')
